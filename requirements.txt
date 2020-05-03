@@ -1,4 +1,5 @@
 numpy
+tensorflow
 gym
 pyyaml
 cached-property

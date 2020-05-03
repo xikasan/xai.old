@@ -1,0 +1,26 @@
+ver: dev
+
+env:
+  name: CartPole-v1
+#  name: FrozenLake-v0
+#  name: MountainCar-v0
+
+dqn:
+  lr: 0.001
+  gamma: 0.99
+  units: [16, 16]
+
+train:
+  batch: 32
+  step:
+    max: 1000000
+
+test:
+  interval: 500
+  render: False
+
+save:
+  do: True
+  path: tests/algorithms/dqn/result
+  model:
+    num: 5
