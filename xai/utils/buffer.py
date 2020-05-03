@@ -4,7 +4,7 @@ import numpy as np
 import xsim
 
 
-def ReplayBuffer(size=1000, enable_extend=False, dtype=np.float32):
+def ReplayBuffer(size=1000, enable_extend=True, dtype=np.float32):
     if enable_extend:
         return ExtendableReplayBuffer(size, dtype)
     raise ValueError("enable_extend=False is not ready")
