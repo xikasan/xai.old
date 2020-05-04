@@ -1,7 +1,7 @@
 ver: dev
 
 env:
-  name: CartPole-v1
+  name: CartPole-v0
 #  name: FrozenLake-v0
 #  name: MountainCar-v0
 
@@ -9,14 +9,16 @@ dqn:
   lr: 0.001
   gamma: 0.99
   units: [16, 16]
+  epsilon: 0.05
 
 train:
   batch: 128
   step:
-    max: 1000000
+    max: 100000
+    warmup: 128
 
 test:
-  interval: 10000
+  interval: 5000
   render: True
 
 save:

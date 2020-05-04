@@ -79,8 +79,8 @@ class DQN:
     def _train_body(self, state, action, next_state, reward, done):
         with tf.GradientTape() as tape:
             tderror = self.tderror(state, action, next_state, reward, done)
-            loss = tf.square(tderror)
-            loss = tf.reduce_mean(tf.reduce_sum(loss, axis=1))
+            loss = tf.square(tderror) / 2
+            loss = tf.reduce_mean(loss)
         grad = tape.gradient(loss, self._qnet.trainable_variables)
         self._optimizer.apply_gradients(zip(grad, self._qnet.trainable_variables))
         return loss
@@ -89,6 +89,7 @@ class DQN:
         done = 1 - done
         action = tf.one_hot(action, self.dim_action)
         target_q = reward + self.gamma * done * self._qnet(next_state)
+        target_q = tf.reduce_max(target_q)
         current_q = self._qnet(state)
         loss = tf.stop_gradient(target_q) - current_q
         loss = action * loss
@@ -130,10 +131,12 @@ class TargetDQN(DQN):
     def tderror(self, state, action, next_state, reward, done):
         done = 1 - done
         action = tf.one_hot(action, self.dim_action)
+        action = tf.squeeze(action)
         target_q = reward + self.gamma * done * self._tnet(next_state)
+        target_q = tf.reduce_max(target_q, axis=1)
         current_q = self._qnet(state)
+        current_q = tf.reduce_sum(action * current_q, axis=1)
         loss = tf.stop_gradient(target_q) - current_q
-        loss = action * loss
         return loss
 
     def model(self):

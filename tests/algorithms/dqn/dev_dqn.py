@@ -16,7 +16,7 @@ def train(conf):
     dim_obs = space.get_size(env.observation_space)
     dim_act = space.get_size(env.action_space)
 
-    agent = DQN(cf.dqn.units, dim_act, dim_obs, gamma=cf.dqn.gamma)
+    agent = DQN(cf.dqn.units, dim_act, dim_obs, gamma=cf.dqn.gamma, epsilon=cf.dqn.epsilon)
 
     # saver
     if cf.save.do:
@@ -37,6 +37,7 @@ def train(conf):
         obs = env.reset()
         episode_step = 0
         episode_reward = 0
+
         while True:
             act = agent.select_action(obs)
             next_obs, reward, done, _ = env.step(act)
@@ -45,11 +46,13 @@ def train(conf):
 
             rb.store(state=obs, action=act, next_state=next_obs, reward=reward, done=done).flush()
 
-            if len(rb) > cf.train.batch:
+            # train
+            if step >= cf.train.step.warmup:
                 batch = rb.sample(cf.train.batch)
                 loss  = agent.train(batch)
                 tf.summary.scalar("train/loss", tf.constant(loss), step=step)
 
+            # test
             if (step.numpy() % cf.test.interval) == 0:
                 test_step, test_reward = test(cf, agent, test_env)
                 tf.summary.scalar("test/episode_step", tf.constant(test_step),   step=step)
@@ -68,7 +71,7 @@ def train(conf):
 
         tf.summary.scalar("train/episode_step",   tf.constant(episode_step),   step=step)
         tf.summary.scalar("train/episode_reward", tf.constant(episode_reward), step=step)
-        print("step", step.numpy(), "episode: step", episode_step, "reward", episode_reward)
+        print("step:", step, "episode[ step:", episode_step, "reward:", episode_reward, "]")
 
 
 def test(cf, agent, env):
