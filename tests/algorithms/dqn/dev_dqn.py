@@ -38,7 +38,7 @@ def train(conf):
         episode_step = 0
         episode_reward = 0
         while True:
-            act = agent.select_action(obs, 0.05)
+            act = agent.select_action(obs)
             next_obs, reward, done, _ = env.step(act)
             episode_reward += reward
             episode_step += 1
@@ -68,7 +68,7 @@ def train(conf):
 
         tf.summary.scalar("train/episode_step",   tf.constant(episode_step),   step=step)
         tf.summary.scalar("train/episode_reward", tf.constant(episode_reward), step=step)
-        print("step", step, "episode: step", episode_step, "reward", episode_reward)
+        print("step", step.numpy(), "episode: step", episode_step, "reward", episode_reward)
 
 
 def test(cf, agent, env):

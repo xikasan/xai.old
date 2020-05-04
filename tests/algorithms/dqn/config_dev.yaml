@@ -11,13 +11,13 @@ dqn:
   units: [16, 16]
 
 train:
-  batch: 32
+  batch: 128
   step:
     max: 1000000
 
 test:
-  interval: 500
-  render: False
+  interval: 10000
+  render: True
 
 save:
   do: True
