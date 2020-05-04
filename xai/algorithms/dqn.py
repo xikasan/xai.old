@@ -3,6 +3,7 @@
 import numpy as np
 import tensorflow as tf
 import tensorflow.keras as tk
+from ..utils import update
 
 
 class QNet(tk.Model):
@@ -34,11 +35,14 @@ class DQN:
             dim_observation,
             lr=1e-3,
             gamma=0.9,
+            epsilon=0.05,
             name="DQN"
     ):
-        self._qnet = QNet(units, dim_action, dim_observation, name=name)
+        self.name = name
+        self._qnet = QNet(units, dim_action, dim_observation, name=name+"/qnet")
         self._optimizer = tf.optimizers.Adam(learning_rate=lr)
         self.dim_action = dim_action
+        self.epsilon = epsilon
         self.gamma = gamma
 
     def select_action_greedy(self, state):
@@ -49,9 +53,9 @@ class DQN:
         action = self._select_action_body(state).numpy()
         return action
 
-    def select_action(self, state, epsilon):
+    def select_action(self, state):
         rand = np.random.rand()
-        if rand < epsilon:
+        if rand < self.epsilon:
             return np.random.randint(0, self.dim_action)
         return self.select_action_greedy(state)
 
@@ -87,9 +91,50 @@ class DQN:
         target_q = reward + self.gamma * done * self._qnet(next_state)
         current_q = self._qnet(state)
         loss = tf.stop_gradient(target_q) - current_q
-        # loss = current_q - target_q
         loss = action * loss
         return loss
 
     def model(self):
         return self._qnet
+
+
+class TargetDQN(DQN):
+
+    def __init__(
+            self,
+            units,
+            dim_action,
+            dim_observation,
+            lr=1e-3,
+            gamma=0.9,
+            update_rate=0.01,
+            epsilon=0.05,
+            name="TargetDQN"
+    ):
+        self.name = name
+        self._qnet = QNet(units, dim_action, dim_observation, name=name+"/qnet")
+        self._tnet = QNet(units, dim_action, dim_observation, name=name+"/tnet")
+        update.copy(self._qnet, self._tnet)
+
+        self._optimizer = tf.optimizers.Adam(learning_rate=lr)
+        self.dim_action = dim_action
+        self.epsilon = epsilon
+        self.gamma = gamma
+        self.tau = update_rate
+
+    def train(self, batch):
+        loss = super().train(batch)
+        update.soft_update(self._qnet, self._tnet, tau=self.tau)
+        return loss
+
+    def tderror(self, state, action, next_state, reward, done):
+        done = 1 - done
+        action = tf.one_hot(action, self.dim_action)
+        target_q = reward + self.gamma * done * self._tnet(next_state)
+        current_q = self._qnet(state)
+        loss = tf.stop_gradient(target_q) - current_q
+        loss = action * loss
+        return loss
+
+    def model(self):
+        return self._tnet
