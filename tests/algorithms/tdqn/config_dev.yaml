@@ -1,7 +1,7 @@
 ver: dev
 
 env:
-  name: CartPole-v0
+  name: CartPole-v1
 #  name: FrozenLake-v0
 #  name: MountainCar-v0
 
