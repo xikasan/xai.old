@@ -1,5 +1,8 @@
 numpy
+tensorflow
+gym
 pyyaml
 cached-property
+
 xtools
 xsim
