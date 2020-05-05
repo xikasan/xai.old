@@ -1,0 +1,34 @@
+env:
+  name: Pendulum-v0
+  step:
+    max: 200
+
+ddpg:
+  critic:
+    units: [32, 32]
+    lr: 0.002
+  policy:
+    units: [32, 32]
+    lr: 0.001
+  update_rate: 0.001
+  discount: 0.99
+  noise: 0.05
+
+train:
+  batch:
+    size: 128
+  step:
+    max: 50000
+    start: 500
+  max_reward: 16.2736044
+
+test:
+  interval: 5000
+  render: False
+
+save:
+  do: True
+  directory: result/ddpg
+  model:
+    num: 5
+  interval: 50
