@@ -46,9 +46,9 @@ def main(cf, agent, rb, env, test_env):
     episode_num = 0
     episode_step = 0
     episode_reward = 0
+    step = 0
 
-    for s in range(cf.train.step.max):
-        step = s + 1
+    while True:
         obs, reward, done = env_step(agent, env, rb, obs)
         episode_reward += reward
         episode_step += 1
@@ -60,8 +60,9 @@ def main(cf, agent, rb, env, test_env):
                 "step:{:4.0f}".format(episode_step)
             )
             # write episode result
-            tf.summary.scalar("train/reward", episode_reward, step=step)
-            tf.summary.scalar("train/step",   episode_step,   step=step)
+            if step > 0:
+                tf.summary.scalar("train/reward", episode_reward, step=step)
+                tf.summary.scalar("train/step",   episode_step,   step=step)
             # reset env
             obs = env.reset()
             episode_num += 1
@@ -69,12 +70,14 @@ def main(cf, agent, rb, env, test_env):
             episode_reward = 0
 
         # check warm up
-        if step < cf.train.step.start:
+        if len(rb) < cf.train.step.start:
             continue
 
-        critic_loss, policy_loss = train_once(cf, agent, rb)
+        step += 1
+        tderror, critic_loss, policy_loss = train_once(cf, agent, rb)
 
         if (step % cf.save.interval) == 0:
+            tf.summary.scalar("train/td_error", tderror, step=step)
             tf.summary.scalar("train/critic_loss", critic_loss, step=step)
             tf.summary.scalar("train/policy_loss", policy_loss, step=step)
 
@@ -82,6 +85,9 @@ def main(cf, agent, rb, env, test_env):
             test_reward, test_step = test_once(cf, agent, test_env)
             tf.summary.scalar("test/reward", tf.constant(test_reward), step=step)
             tf.summary.scalar("test/step", tf.constant(test_step), step=step)
+
+        if step == cf.train.step.max:
+            break
 
 
 def train_once(cf, agent, rb):
@@ -133,5 +139,5 @@ def generate_ddpg(cf, env):
 
 if __name__ == '__main__':
     xt.go_to_root()
-    config = "tests/algorithms/ddpg/config.yaml"
+    config = "tests/algorithms/ddpg/config_Bipedal.yaml"
     run(config)

@@ -1,0 +1,25 @@
+env:
+  name: MountainCarContinuous-v0
+  step: 999
+
+ddpg:
+  critic:
+    units: [32, 32]
+    lr: 0.002
+  policy:
+    units: [32, 32]
+    lr: 0.001
+  max_action: 1.0
+  noise: 0.3
+  discount: 0.999
+  update_rate: 0.01
+
+train:
+  batch_size: 512
+  step:
+    warmup: 1000
+    max: 500000
+
+test:
+  interval: 20000
+  render: True

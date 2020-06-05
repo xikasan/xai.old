@@ -1,0 +1,25 @@
+env:
+  name: BipedalWalker-v3
+  step: 1600
+
+ddpg:
+  critic:
+    units: [400, 3300]
+    lr: 0.005
+  policy:
+    units: [400, 300]
+    lr: 0.001
+  max_action: 1.0
+  noise: 0.1
+  discount: 0.99
+  update_rate: 0.001
+
+train:
+  batch_size: 128
+  step:
+    warmup: 1600
+    max: 160000
+
+test:
+  interval: 8000
+  render: True

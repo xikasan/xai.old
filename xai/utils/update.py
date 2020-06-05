@@ -39,3 +39,13 @@ def soft_update(source, target, tau=0.01):
     for s, t in zip(source, target):
         t.assign((1 - tau) * t + tau * s)
 
+
+def update_variables(sources, targets, tau=0.01):
+    def update_op(source, target):
+        if tau == 1.0:
+            return target.assign(source)
+        else:
+            return target.assign((1 - tau) * target + tau * source)
+
+    update_ops = [update_op(source, target) for source, target in zip(sources, targets)]
+    return tf.group(name="uppdate_variables", *update_ops)
