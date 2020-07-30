@@ -1,0 +1,32 @@
+env:
+  name: BipedalWalker-v3
+  step:
+    max: 1600
+
+ddpg:
+  critic:
+    units: [400, 300]
+    lr: 0.005
+  policy:
+    units: [400, 300]
+    lr: 0.001
+    noise: 0.01
+    max: 1.0
+    bias: 0.0
+  discount: 0.99
+  tau: 0.001
+
+train:
+  step:
+    max: 1000000
+    start: 1600
+  batch:
+    size: 256
+
+test:
+  interval: 5000
+  render: True
+
+save:
+  do: True
+  directory: results/ddpg
