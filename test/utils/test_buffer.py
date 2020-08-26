@@ -29,7 +29,7 @@ def run():
 
     loader = BatchLoader(rb, batch_size)
     for batch in loader:
-        print(batch.reward)
+        print(batch.reward.shape)
 
 
 if __name__ == '__main__':
