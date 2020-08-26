@@ -1,5 +1,6 @@
 # coding: utf-8
 
+import xsim
 import numpy as np
 
 
@@ -56,6 +57,7 @@ class BatchLoader:
     def __init__(self, buffer, batch_size, dtype=np.float32):
         self.batch_size = batch_size
         self._buf = buffer
+        self._indices = None
         self._counter = None
         self._data = None
         self.dtype = dtype
@@ -69,9 +71,8 @@ class BatchLoader:
         return int(np.ceil(data_size / self.batch_size))
 
     def __iter__(self):
-        self._data = self._buf if not isinstance(self._buf, ReplayBuffer) else self._buf.buffer()
-        self._data_size = len(self._data[list(self._data.keys())[0]])
         self._counter = 0
+        self._indices = np.arange(1)
         return self
 
     def __next__(self):
