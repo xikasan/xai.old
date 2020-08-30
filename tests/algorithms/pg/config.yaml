@@ -1,0 +1,14 @@
+env:
+  name: CartPole-v1
+  step:
+    max: 200
+
+pg:
+  units:
+    - 32
+    - 32
+  lr: 0.0005
+
+train:
+  batch_size: 32
+  epoch: 500

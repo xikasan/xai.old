@@ -13,7 +13,7 @@ class ReplayBuffer:
         self.max_size = max_size
         self._default_keys = keys
         self._buf = None
-        self._counter = None
+        self._index = None
         self._is_full = False
         self.dtype = dtype
         self.reset()
@@ -21,43 +21,48 @@ class ReplayBuffer:
     def __len__(self):
         if self._is_full:
             return self.max_size
-        return self._counter
+        return self._index
 
     def __call__(self, **kwargs):
         # store data
         for key, val in kwargs.items():
             val = np.squeeze(val)
             self._add_key_if_not_exist(key, val)
-            self._buf[key][self._counter, :] = val
+            self._buf[key][self._index, :] = val
 
         # count up
-        self._counter += 1
-        if (self._counter % self.max_size) == 0:
-            self._counter = 0
+        self._index += 1
+        if (self._index % self.max_size) == 0:
+            self._index = 0
             self._is_full = True
         return
 
     def reset(self):
         self._buf = {}
-        self._counter = 0
+        self._index = 0
         self._is_full = False
 
     def buffer(self):
-        return {key: val[0:self._counter] for key, val in self._buf.items()}
+        return {key: self.get(key) for key in self._buf.keys()}
 
     def get(self, key):
-        return self._buf[key].copy()
+        data = self._buf[key].copy()
+        if not self._is_full:
+            return data[:self._index]
+        if self._index == 0:
+            return data
+        return np.concatenate([data[self._index:], data[:self._index]], axis=0)
 
     def append_column(self, key, values):
         self._add_key_if_not_exist(key, values[0])
-        temp_counter = self._counter
+        temp_index = self._index
         for val in reversed(values):
             # count down
-            temp_counter -= 1
-            if temp_counter < 0:
-                temp_counter += self.max_size
+            temp_index -= 1
+            if temp_index < 0:
+                temp_index += self.max_size
 
-            self._buf[key][temp_counter, :] = np.squeeze(val)
+            self._buf[key][temp_index, :] = np.squeeze(val)
 
     def _add_key_if_not_exist(self, key, val):
         # existing check
@@ -77,7 +82,7 @@ class BatchLoader:
     def __init__(self, buffer, batch_size, dtype=np.float32):
         self.batch_size = batch_size
         self._buf = buffer
-        self._counter = None
+        self._index = None
         self._data = None
         self.dtype = dtype
 
@@ -87,19 +92,19 @@ class BatchLoader:
     def __iter__(self):
         self._data = self._buf.buffer()
         self._data_size = len(self._buf)
-        self._counter = 0
+        self._index = 0
         self._indices = np.random.permutation(self._data_size)
         return self
 
     def __next__(self):
-        if self._counter >= self._data_size:
+        if self._index >= self._data_size:
             raise StopIteration()
 
         batch = self._retrieve()
-        self._counter += self.batch_size
+        self._index += self.batch_size
         return batch
 
     def _retrieve(self):
-        idxs = self._indices[self._counter:self._counter+self.batch_size]
+        idxs = self._indices[self._index:self._index+self.batch_size]
         batch = {key: np.asarray(val[idxs]) for key, val in self._data.items()}
         return xsim.Batch.make(batch)
