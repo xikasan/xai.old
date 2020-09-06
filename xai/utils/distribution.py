@@ -4,28 +4,45 @@ import numpy as np
 import tensorflow as tf
 
 
-class GaussianDistribution:
+class Distribution:
 
-    def __init__(self):
-        pass
+    EPS = 1e-8
 
-    @staticmethod
-    def sample(params):
-        means = params["mean"]
-        log_stds = params["log_std"]
-        return means + tf.random.normal(shape=means.shape) * tf.math.exp(log_stds)
+    @classmethod
+    def entropy(cls, dist):
+        raise NotImplementedError
 
-    @staticmethod
-    def log_likelihood(x, params):
-        means = params["mean"]
-        log_stds = params["log_std"]
-        assert means.shape == log_stds.shape
-        zs = (x - means) / tf.exp(log_stds)
-        return - tf.reduce_sum(log_stds, axis=-1) \
-               - 0.5 * tf.reduce_sum(tf.square(zs), axis=-1) \
-               - 0.5 * means.shape[1] * tf.math.log(2 * np.pi)
+    @classmethod
+    def sample(cls, dist):
+        raise NotImplementedError
 
-    @staticmethod
-    def entropy(param):
-        log_stds = param["log_std"]
-        return tf.reduce_sum(log_stds + tf.math.log(tf.math.sqrt(2 * np.pi * np.e)), axis=-1)
+    @classmethod
+    def log_likehood(cls, x, dist):
+        raise NotImplementedError
+
+    @classmethod
+    def kl(cls, dist1, dist2):
+        raise NotImplementedError
+
+
+class CategoricalDistribution(Distribution):
+
+    @classmethod
+    def sample(cls, prob):
+        return tf.random.categorical(tf.math.log(prob), 1)
+
+    @classmethod
+    def log_likehood(cls, x, prob):
+        assert x.shape == prob.shape,\
+            "shape of x in one-hot {} and prob {} is not much".format(x.shape, prob.shape)
+        return tf.math.log(tf.reduce_sum(x * prob, axis=1) + cls.EPS)
+
+    @classmethod
+    def entropy(cls, prob):
+        return -tf.reduce_sum(prob * tf.math.log(prob + cls.EPS), axis=1)
+
+    @classmethod
+    def kl(cls, prob1, prob2):
+        return tf.reduce_sum(
+            prob1 * (tf.math.log(prob1 + cls.EPS) - tf.math.log(prob2 + cls.EPS))
+        )
