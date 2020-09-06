@@ -39,7 +39,7 @@ class Policy(tk.Model):
         self.l2 = tk.layers.Dense(units[1],   activation="relu", name=name+"L2")
         self.lo = tk.layers.Dense(dim_action, activation="tanh", name=name+"Lo")
 
-        self.max_acion = max_action
+        self.max_action = max_action
 
         dummy_state = tk.Input((dim_state, ), dtype=tf.float32)
         self(dummy_state)
@@ -48,7 +48,7 @@ class Policy(tk.Model):
         feature = self.l1(inputs)
         feature = self.l2(feature)
         feature = self.lo(feature)
-        feature = feature * self.max_acion
+        feature = feature * self.max_action
         return feature
 
 
@@ -100,7 +100,7 @@ class DDPG(tk.Model):
     def select_noisy_action(self, state):
         action = self.select_action(state)
         action = action + np.random.normal(0, self.noise, size=action.shape)
-        action = np.clip(action, -self._policy.max_acion, self._policy.max_acion)
+        action = np.clip(action, -self._policy.max_action, self._policy.max_action)
         return action
 
     @tf.function
@@ -121,8 +121,8 @@ class DDPG(tk.Model):
     def _train_body(self, state, action, next_state, reward, done):
         # critic
         with tf.GradientTape() as critic_tape:
-            critic_loss = self.tderror(state, action, next_state, reward, done)
-            critic_loss = tf.reduce_mean(tf.square(critic_loss))
+            tderror = self.tderror(state, action, next_state, reward, done)
+            critic_loss = tf.reduce_mean(tf.square(tderror))
         critic_grad = critic_tape.gradient(critic_loss, self._critic.trainable_variables)
         self._critic_optimizer.apply_gradients(zip(critic_grad, self._critic.trainable_variables))
 
@@ -136,7 +136,7 @@ class DDPG(tk.Model):
         update.soft_update(self._critic, self._critic_target, self.update_rate)
         update.soft_update(self._policy, self._policy_target, self.update_rate)
 
-        return critic_loss, policy_loss
+        return tf.reduce_mean(tderror), critic_loss, policy_loss
 
     def tderror(self, state, action, next_state, reward, done):
         target_q = self.discount * (1 - done) * self._critic_target([

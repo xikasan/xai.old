@@ -1,0 +1,25 @@
+env:
+  name: Pendulum-v0
+  step: 200
+
+ddpg:
+  critic:
+    units: [32, 32]
+    lr: 0.002
+  policy:
+    units: [32, 32]
+    lr: 0.001
+  max_action: 2.0
+  noise: 0.01
+  discount: 0.9
+  update_rate: 0.001
+
+train:
+  batch_size: 8
+  step:
+    warmup: 200
+    max: 50000
+
+test:
+  interval: 1000
+  render: True
